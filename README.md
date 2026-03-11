@@ -432,6 +432,8 @@ python main.py -m adversarial -a ExpectimaxAgent -p 1.0 -l hunter_swarm
 python main.py -m adversarial -a ExpectimaxAgent -p 1.0 -l pacman_maze
 python main.py -m adversarial -a ExpectimaxAgent -p 1.0 -l desperate_run
 ```
-#   T a l l e r 2 _ I A  
- #   T a l l e r 2 _ I A  
+#   T a l l e r 2 _ I A 
+ 
+ #   T a l l e r 2 _ I A 
+ 
  

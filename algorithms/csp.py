@@ -25,13 +25,18 @@ def backtracking_search(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     Artificial Intelligence: A Modern Approach (4th Edition) by Russell and Norvig, Chapter 5: Constraint Satisfaction Problems
     """
     # TODO: Implement your code here
+    #Pongo este contador para poder mostrar estadísticas chéveres para el informe:D
+    contador = {"Decisión":0}
+    
     #Pongo esto aquí para hacerlo recursivo :p
     def solucion(diccionario):
         if csp.is_complete(diccionario):
+            print(f"🐮🌿[Backtracking Simple] Total de asignaciones: {contador['Decisión']}")
             return diccionario
         seleccionada = csp.get_unassigned_variables(diccionario)[0]
 
         for valor in csp.domains[seleccionada]:
+            contador["Decisión"] += 1
             if csp.is_consistent(seleccionada, valor, diccionario):
                 csp.assign(seleccionada,valor, diccionario)
                 #aquí nos ponemos recursivos jiji
@@ -41,8 +46,8 @@ def backtracking_search(csp: DroneAssignmentCSP) -> dict[str, str] | None:
                 csp.unassign(seleccionada, diccionario)
 
         return None
-
     return solucion({})
+
 
 
 def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
@@ -58,13 +63,16 @@ def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     - Forward checking reduces the search space by detecting failures earlier than basic backtracking.
     """
     # TODO: Implement your code here
+    contador = {"Decisión":0}
     def solucion_fc(diccionario):
         if csp.is_complete(diccionario):
+            print(f"🐮🌿[Forward Checking] Total de asignaciones: {contador['Decisión']}")
             return diccionario
         
         seleccionada = csp.get_unassigned_variables(diccionario)[0]
 
         for valor in csp.domains[seleccionada]:
+            contador["Decisión"] += 1
             if csp.is_consistent(seleccionada, valor, diccionario):
                 csp.assign(seleccionada, valor, diccionario)
 
@@ -79,7 +87,7 @@ def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
                         
                         if not csp.domains[vecino]:
                             poda_exitosa = False
-                            break                
+                            break
                 if poda_exitosa:
                     resultado = solucion_fc(diccionario)
                     if resultado is not None:
@@ -89,7 +97,6 @@ def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
                 csp.unassign(seleccionada, diccionario)
 
         return None
-
     return solucion_fc({})
 
 
@@ -110,6 +117,7 @@ def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
       - a backtrack function that integrates AC-3 into the search process.
     """
     # TODO: Implement your code here
+    contador = {"Decisión":0}
     def ac3(assignment, queue):
         """Algoritmo AC-3 para mantener consistencia de arco."""
         while queue:
@@ -130,11 +138,13 @@ def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
     def solucion_ac3(assignment):
         if csp.is_complete(assignment):
+            print(f"🐮🌿 [AC-3] Total de asignaciones: {contador['Decisión']}")
             return assignment
         
         var = csp.get_unassigned_variables(assignment)[0]
 
         for valor in csp.domains[var]:
+            contador["Decisión"] += 1
             if csp.is_consistent(var, valor, assignment):
                 csp.assign(var, valor, assignment)
                 old_domains = {v: list(csp.domains[v]) for v in csp.domains}
@@ -153,6 +163,7 @@ def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
     initial_queue = [(v, n) for v in csp.domains for n in csp.get_neighbors(v)]
     if not ac3({}, initial_queue):
+        print(f"[AC-3] Falló en consistencia inicial.")
         return None
         
     return solucion_ac3({})
@@ -174,7 +185,10 @@ def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     - Use csp.get_num_conflicts(var, value, assignment) to count how many values would be ruled out for neighbors if var=value is assigned.
     """
     # TODO: Implement your code here (BONUS)
+    contador = {"Decisión":0}
+
     def get_mrv_variable(assignment):
+        
         unassigned = csp.get_unassigned_variables(assignment)
         return min(unassigned, key=lambda v: (len(csp.domains[v]), -len(csp.get_neighbors(v))))
 
@@ -183,11 +197,13 @@ def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
     def solucion_mrv_lcv(assignment):
         if csp.is_complete(assignment):
+            print(f"🐮🌿 [MRV+LCV] Total de asignaciones: {contador['Decisión']}")
             return assignment
         
         var = get_mrv_variable(assignment)
 
         for valor in get_lcv_ordered_values(var, assignment):
+            contador["Decisión"] += 1
             if csp.is_consistent(var, valor, assignment):
                 csp.assign(var, valor, assignment)
                 old_domains = {v: list(csp.domains[v]) for v in csp.domains}
@@ -209,6 +225,14 @@ def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
                 csp.domains = old_domains
                 csp.unassign(var, assignment)
-        return None
+            return None
+    final_assignment = solucion_mrv_lcv({})
 
-    return solucion_mrv_lcv({})
+    if final_assignment:
+        print(f"Sí hay solución 🐮🌿")
+    else:
+        print(f"No hay solución 🐮🥩 ")
+        print(f"Total de asignaciones intentadas: {contador['Decisión']}")
+            
+    return final_assignment    
+
