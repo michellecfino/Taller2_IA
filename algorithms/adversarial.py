@@ -143,6 +143,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         - Pass alpha and beta through the recursive calls.
         """
         # TODO: Implement your code here (BONUS)
+
         return None
 
 
@@ -176,4 +177,60 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         - self.prob is set via the constructor argument prob.
         """
         # TODO: Implement your code here
-        return None
+
+        if state.is_win() or state.is_lose():
+            return None
+
+        best_action = None
+        max_v = float('-inf')
+        legal_actions = state.get_legal_actions(0)
+
+        for action in legal_actions:
+            successor = state.generate_successor(0, action)
+            
+            if successor.is_win():
+                return action
+            
+            v = self.expectimax_value(successor, 1, 0)
+            
+            if v > max_v:
+                max_v = v
+                best_action = action
+                
+        return best_action
+
+    def expectimax_value(self, state, agent_index, depth):
+        """
+        Función recursiva única que maneja tanto los turnos MAX (dron) como los CHANCE (cazadores).
+        """
+        
+        if state.is_win() or state.is_lose() or depth == self.depth:
+            return self.evaluation_function(state)
+
+        legal_actions = state.get_legal_actions(agent_index)
+        if not legal_actions:
+            return self.evaluation_function(state)
+
+        num_agents = state.get_num_agents()
+        next_agent = agent_index + 1
+        next_depth = depth
+        
+        if next_agent >= num_agents:
+            next_agent = 0
+            next_depth += 1
+
+        child_values = []
+        for action in legal_actions:
+            successor = state.generate_successor(agent_index, action)
+            child_values.append(self.expectimax_value(successor, next_agent, next_depth))
+
+        
+        if agent_index == 0:
+            return max(child_values)
+            
+        
+        else:
+            min_val = min(child_values)
+            mean_val = sum(child_values) / len(child_values)
+            return (1 - self.prob) * min_val + self.prob * mean_val
+        
