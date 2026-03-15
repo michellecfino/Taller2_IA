@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from algorithms.utils import bfs_distance, dijkstra
+
 
 if TYPE_CHECKING:
     from world.game_state import GameState
 
 
 def evaluation_function(state: GameState) -> float:
+    
     """
     Evaluation function for non-terminal states of the drone vs. hunters game.
 
@@ -42,4 +45,51 @@ def evaluation_function(state: GameState) -> float:
     - A good evaluation function balances delivery progress with hunter avoidance.
     """
     # TODO: Implement your code here
-    return 0.0
+
+    if state.is_win():
+        return 1000.0
+    if state.is_lose():
+        return -1000.0
+    
+    drone_pos = state.get_drone_position()
+    hunters = state.get_hunter_positions()
+    deliveries = state.get_pending_deliveries()
+    layout = state.get_layout()
+    current_score = state.get_score()
+
+    score = current_score
+
+    score -= len(deliveries) * 100
+
+    if deliveries:
+        delivery_costs = []
+        for d in deliveries:
+            
+            cost, _ = dijkstra(layout, drone_pos, d)
+            if cost != float('inf'):
+                delivery_costs.append(cost)
+        
+        if delivery_costs:
+            min_delivery_cost = min(delivery_costs)
+            
+            score -= min_delivery_cost * 2
+
+    if hunters:
+        hunter_distances = []
+        for h in hunters:
+            
+            dist = bfs_distance(layout, h, drone_pos, True)
+            if dist != float('inf'):
+                hunter_distances.append(dist)
+        
+        if hunter_distances:
+            min_hunter_dist = min(hunter_distances)
+            
+            if min_hunter_dist <= 2:
+                score -= 500
+
+            elif min_hunter_dist <= 4:
+                score -= 50
+            
+    
+    return max(-1000.0, min(1000.0, float(score)))
