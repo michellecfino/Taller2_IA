@@ -44,7 +44,6 @@ def evaluation_function(state: GameState) -> float:
     - Consider edge cases: no pending deliveries, no hunters nearby.
     - A good evaluation function balances delivery progress with hunter avoidance.
     """
-    # TODO: Implement your code here
 
     if state.is_win():
         return 1000.0
@@ -57,39 +56,39 @@ def evaluation_function(state: GameState) -> float:
     layout = state.get_layout()
     current_score = state.get_score()
 
-    score = current_score
+    score = float(current_score)
 
-    score -= len(deliveries) * 100
+    score -= len(deliveries) * 300
 
     if deliveries:
         delivery_costs = []
         for d in deliveries:
-            
             cost, _ = dijkstra(layout, drone_pos, d)
             if cost != float('inf'):
                 delivery_costs.append(cost)
         
         if delivery_costs:
             min_delivery_cost = min(delivery_costs)
-            
-            score -= min_delivery_cost * 2
+
+            score -= min_delivery_cost * 4
+            score += 200 / (min_delivery_cost + 1)
 
     if hunters:
-        hunter_distances = []
         for h in hunters:
-            
             dist = bfs_distance(layout, h, drone_pos, True)
-            if dist != float('inf'):
-                hunter_distances.append(dist)
-        
-        if hunter_distances:
-            min_hunter_dist = min(hunter_distances)
-            
-            if min_hunter_dist <= 2:
-                score -= 500
 
-            elif min_hunter_dist <= 4:
-                score -= 50
-            
-    
+            if dist != float('inf'):
+                score -= 30.0 / (dist + 1)
+
+                if dist <= 2:
+                    score -= 400
+                elif dist <= 4:
+                    score -= 80
+
+    try:
+        if state.get_last_action() == "STOP":
+            score -= 25
+    except:
+        pass
+
     return max(-1000.0, min(1000.0, float(score)))

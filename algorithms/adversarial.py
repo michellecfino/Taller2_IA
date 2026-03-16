@@ -82,10 +82,15 @@ class MinimaxAgent(MultiAgentSearchAgent):
         profundidadInicial = self.depth
         evaluacionFinal = self.evaluation_function
         numAgentes = state.get_num_agents()
+
         def minMaxRecursivo(estado, agente, d):
+
             contador["Decisión"] += 1
-            if d==0 or estado.is_win() or estado.is_lose():
-                return evaluacionFinal(estado)
+
+            if d == 0 or estado.is_win() or estado.is_lose():
+                # Added: pequeño ruido para romper empates en estados con mismo valor
+                return evaluacionFinal(estado) + random.uniform(-0.0001, 0.0001)
+
             proximo = (agente + 1) % numAgentes
             nuevaProfundidad = d - 1 if proximo == 0 else d
             acciones = estado.get_legal_actions(agente)
@@ -93,21 +98,35 @@ class MinimaxAgent(MultiAgentSearchAgent):
             if not acciones:
                 return evaluacionFinal(estado)
             
-            sucesoresEstados = [minMaxRecursivo(estado.generate_successor(agente, accion), proximo, nuevaProfundidad) for accion in acciones]
+            sucesoresEstados = [
+                minMaxRecursivo(
+                    estado.generate_successor(agente, accion),
+                    proximo,
+                    nuevaProfundidad
+                )
+                for accion in acciones
+            ]
+
             return max(sucesoresEstados) if agente == 0 else min(sucesoresEstados)
             
         accionesDron = state.get_legal_actions(0)
+
         if not accionesDron:
             return None
         
         accionesDron = state.get_legal_actions(0)
+
         if not accionesDron:
             return None
         
+        # Added: romper simetría del árbol de búsqueda
+        random.shuffle(accionesDron)
+
         mejorValor = -float('inf')
         mejorAccion = None
 
         for accion in accionesDron:
+
             sucesor = state.generate_successor(0, accion)
             
             valorActual = minMaxRecursivo(sucesor, 1, profundidadInicial)
@@ -117,9 +136,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 mejorAccion = accion
 
         return mejorAccion
-
-
-
+    
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -143,6 +160,75 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         - Pass alpha and beta through the recursive calls.
         """
         # TODO: Implement your code here (BONUS)
+        if state.is_win() or state.is_lose():
+            return None
+
+        profundidadInicial = self.depth
+        evaluacionFinal = self.evaluation_function
+        numAgentes = state.get_num_agents()
+        
+        def alphaBetaRecursivo(estado, agente, d, alpha, beta):
+            # Caso base
+            if d == 0 or estado.is_win() or estado.is_lose():
+                if estado.is_win():
+                    return 1000.0
+                if estado.is_lose():
+                    return -1000.0
+                return evaluacionFinal(estado)
+            
+            # Determinar siguiente agente y profundidad
+            proximo = (agente + 1) % numAgentes
+            nuevaProfundidad = d - 1 if proximo == 0 else d
+            acciones = estado.get_legal_actions(agente)
+            
+            if not acciones:
+                return evaluacionFinal(estado)
+            
+            if agente == 0:  # MAX (dron)
+                valor = -float('inf')
+                for accion in acciones:
+                    sucesor = estado.generate_successor(agente, accion)
+                    valor = max(valor, alphaBetaRecursivo(sucesor, proximo, nuevaProfundidad, alpha, beta))
+                    if valor > beta:  # Poda (strict)
+                        return valor
+                    alpha = max(alpha, valor)
+                return valor
+            else:  # MIN (cazadores)
+                valor = float('inf')
+                for accion in acciones:
+                    sucesor = estado.generate_successor(agente, accion)
+                    valor = min(valor, alphaBetaRecursivo(sucesor, proximo, nuevaProfundidad, alpha, beta))
+                    if valor < alpha:  # Poda (strict)
+                        return valor
+                    beta = min(beta, valor)
+                return valor
+        
+        # Encontrar mejor acción para el dron
+        accionesDron = state.get_legal_actions(0)
+        if not accionesDron:
+            return None
+        
+        mejorValor = -float('inf')
+        mejorAccion = None
+        alpha = -float('inf')
+        beta = float('inf')
+        
+        print(f"Evaluando acciones con Alpha-Beta (profundidad {profundidadInicial})...")
+        
+        for accion in accionesDron:
+            sucesor = state.generate_successor(0, accion)
+            valorActual = alphaBetaRecursivo(sucesor, 1, profundidadInicial, alpha, beta)
+            
+            print(f"  {accion}: {valorActual:.2f}")
+            
+            if valorActual > mejorValor:
+                mejorValor = valorActual
+                mejorAccion = accion
+            
+            alpha = max(alpha, mejorValor)
+        
+        print(f"Mejor acción: {mejorAccion} (valor: {mejorValor:.2f})")
+        return mejorAccion
 
         return None
 
@@ -233,4 +319,3 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             min_val = min(child_values)
             mean_val = sum(child_values) / len(child_values)
             return (1 - self.prob) * min_val + self.prob * mean_val
-        
