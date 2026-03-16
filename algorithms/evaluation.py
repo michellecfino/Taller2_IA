@@ -44,52 +44,34 @@ def evaluation_function(state: GameState) -> float:
     - Consider edge cases: no pending deliveries, no hunters nearby.
     - A good evaluation function balances delivery progress with hunter avoidance.
     """
-    # TODO: Implement your code here
-
-    if state.is_win():
-        return 1000.0
-    if state.is_lose():
-        return -1000.0
+    if state.is_win(): return 1000.0
+    if state.is_lose(): return -1000.0
     
     drone_pos = state.get_drone_position()
-    hunters = state.get_hunter_positions()
     deliveries = state.get_pending_deliveries()
     layout = state.get_layout()
-    current_score = state.get_score()
+    score = state.get_score()
 
-    score = current_score
+    # 1. Castigo masivo por entregas faltantes
+    score -= len(deliveries) * 200 
 
-    score -= len(deliveries) * 100
-
+    # 2. El "Imán" (Dijkstra): Aumentamos el peso a -20 para que cada paso cuente
     if deliveries:
-        delivery_costs = []
-        for d in deliveries:
-            
-            cost, _ = dijkstra(layout, drone_pos, d)
-            if cost != float('inf'):
-                delivery_costs.append(cost)
-        
-        if delivery_costs:
-            min_delivery_cost = min(delivery_costs)
-            
-            score -= min_delivery_cost * 2
+        distancias = [dijkstra(layout, drone_pos, d)[0] for d in deliveries]
+        min_dist = min(distancias)
+        score -= min_dist * 20 # Antes era -5 o -10; con -20 el dron "siente" el progreso
 
+    # 3. Supervivencia selectiva
+    hunters = state.get_hunter_positions()
     if hunters:
-        hunter_distances = []
-        for h in hunters:
-            
-            dist = bfs_distance(layout, h, drone_pos, True)
-            if dist != float('inf'):
-                hunter_distances.append(dist)
+        dist_hunters = [bfs_distance(layout, h, drone_pos, True) for h in hunters]
+        min_h = min(dist_hunters)
         
-        if hunter_distances:
-            min_hunter_dist = min(hunter_distances)
-            
-            if min_hunter_dist <= 2:
-                score -= 500
+        # Solo se asusta si el cazador está REALMENTE cerca (distancia 1 o 2)
+        if min_h <= 1:
+            score -= 500 
+        elif min_h <= 2:
+            score -= 100
+        # Si está a 3 o más, ignoramos al cazador para que el dron no oscile [cite: 144, 153]
 
-            elif min_hunter_dist <= 4:
-                score -= 50
-            
-    
-    return max(-1000.0, min(1000.0, float(score)))
+    return float(score)

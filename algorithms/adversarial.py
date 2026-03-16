@@ -77,15 +77,14 @@ class MinimaxAgent(MultiAgentSearchAgent):
         - Return the ACTION (not the value) that maximizes the minimax value for the drone.
         """
         # TODO: Implement your code here
-
-        contador = {"Decisión":0}
         profundidadInicial = self.depth
         evaluacionFinal = self.evaluation_function
         numAgentes = state.get_num_agents()
+
         def minMaxRecursivo(estado, agente, d):
-            contador["Decisión"] += 1
-            if d==0 or estado.is_win() or estado.is_lose():
+            if d == 0 or estado.is_win() or estado.is_lose():
                 return evaluacionFinal(estado)
+            
             proximo = (agente + 1) % numAgentes
             nuevaProfundidad = d - 1 if proximo == 0 else d
             acciones = estado.get_legal_actions(agente)
@@ -98,28 +97,26 @@ class MinimaxAgent(MultiAgentSearchAgent):
             
         accionesDron = state.get_legal_actions(0)
         if not accionesDron:
-            return None
+            return 'Stop'
         
-        accionesDron = state.get_legal_actions(0)
-        if not accionesDron:
-            return None
-        
-        mejorValor = -float('inf')
-        mejorAccion = None
+        mejorValor = float('-inf')
+        mejoresAcciones = [] # Aquí guardaremos todas las acciones que den el mejor puntaje
 
         for accion in accionesDron:
             sucesor = state.generate_successor(0, accion)
-            
             valorActual = minMaxRecursivo(sucesor, 1, profundidadInicial)
             
+            # Castigo fuerte al 'Stop' para obligarlo a explorar
+            if accion == 'Stop':
+                valorActual -= 500 
+# ... dentro del bucle de acciones ...
             if valorActual > mejorValor:
                 mejorValor = valorActual
-                mejorAccion = accion
+                mejoresAcciones = [accion]
+            elif valorActual == mejorValor:
+                mejoresAcciones.append(accion)
 
-        return mejorAccion
-
-
-
+        return random.choice(mejoresAcciones)    
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
