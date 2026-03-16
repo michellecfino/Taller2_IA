@@ -174,9 +174,8 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                     return 1000.0
                 if estado.is_lose():
                     return -1000.0
-                return evaluacionFinal(estado)
+                return evaluacionFinal(estado) + random.uniform(-0.0001, 0.0001)
             
-            # Determinar siguiente agente y profundidad
             proximo = (agente + 1) % numAgentes
             nuevaProfundidad = d - 1 if proximo == 0 else d
             acciones = estado.get_legal_actions(agente)
@@ -205,9 +204,10 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         
         # Encontrar mejor acción para el dron
         accionesDron = state.get_legal_actions(0)
+        accionesDron = [a for a in accionesDron if a != Directions.STOP]
         if not accionesDron:
             return None
-        
+        random.shuffle(accionesDron)
         mejorValor = -float('inf')
         mejorAccion = None
         alpha = -float('inf')
