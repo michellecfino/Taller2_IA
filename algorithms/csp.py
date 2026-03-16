@@ -124,9 +124,11 @@ def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
             (xi, xj) = queue.pop(0)
             revised = False
             for x_val in list(csp.domains[xi]):
+                """
                 if not any(csp.is_consistent(xi, x_val, {**assignment, xj: y_val}) for y_val in csp.domains[xj]):
                     csp.domains[xi].remove(x_val)
                     revised = True
+                    """
             
             if revised:
                 if not csp.domains[xi]:
